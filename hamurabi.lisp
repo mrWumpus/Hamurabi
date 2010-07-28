@@ -25,6 +25,11 @@
     (if (not (null transformer))
       (funcall transformer value)
       value)))
+
+(defun peeps (stream arg colon at &rest rest)
+  "FORMAT function to pluralize person/people"
+  (declare (ignore colon at))
+  (format stream "pe~[ople~;rson~:;ople~]" arg))
 ;;;
 
 (defparameter *plague-percent* 15) ; 15% possibility for plague
@@ -56,7 +61,7 @@
   (with-slots
     (population store acreage years) game-data
     (format *query-io* 
-            "Try your hand at governing ancient Sumeria for a ~R term office.~%~%You are starting with a population of ~D, ~D acres and ~D bushels in store.~%" 
+            "Try your hand at governing ancient Sumeria for a ~R term office.~%~%You are starting with a population of ~D, ~D acre~:P and ~D bushel~:P in store.~%" 
              years population acreage store)))
 
 (defun year-review (year-data game-data)
@@ -67,11 +72,11 @@
       (year births starved plague? rats yield plant) year-data
       (with-slots
         (population store acreage) game-data 
-        (format *query-io* "~%In year ~D, ~D people starved, ~D came to the city.~%"
+        (format *query-io* "~%In year ~D, ~D ~:*~/hamurabi::peeps/ starved, ~D came to the city.~%"
               year starved births)
         (when plague?
           (format *query-io* "A horrible plague struck! Half the population died!~%"))
-        (format *query-io* "Population is now ~D.~%The City owns ~D acres~%You cultivated ~D acres and harvested ~D bushels per acre.~%Rats ate ~D bushels.~%You now have ~D bushels in store.~%"
+        (format *query-io* "Population is now ~D.~%The City owns ~D acre~:P~%You cultivated ~D acre~:P and harvested ~D bushel~:P per acre.~%Rats ate ~D bushel~:P.~%You now have ~D bushel~:P in store.~%"
                 population acreage plant yield rats store))))
   (values))
 
@@ -81,7 +86,7 @@
     (with-slots
        (population deaths percent-starved acreage years) game-data
        (let ((land (float (/ acreage population))))
-         (format *query-io* "~%In your ~R year term in office, on average ~,2F percent of the population starved per year.~%A total of ~D people died.~%You started with ~D acres per person and ended with ~,2F acres per person.~%~%" 
+         (format *query-io* "~%In your ~R year term in office, on average ~,2F percent of the population starved per year.~%A total of ~D ~:*~/hamurabi::peeps/ died.~%You started with ~D acre~:P per person and ended with ~,2F acre~:P per person.~%~%" 
                  years percent-starved deaths start-land land)
          (cond
            ((or (< 33 percent-starved) (< land (* .7 start-land))) (fink))
@@ -101,13 +106,13 @@
 (defun not-bad (population)
   (declare (fixnum population))
   (let ((haters (1+ (random (floor (* population 4/5))))))
-    (format *query-io* "Your performance could have been somewhat better, but really wasn't too bad at all. ~D people would dearly like to see you assassinated... but we all have our trivial problems.~%" haters)))
+    (format *query-io* "Your performance could have been somewhat better, but really wasn't too bad at all. ~D ~:*~/hamurabi:peeps/ would dearly like to see you assassinated... but we all have our trivial problems.~%" haters)))
 
 (defun fantastic ()
   (format *query-io* "A fantastic performance!!! Charlemagne, Disraeli and Jefferson combined could not have done better!~%"))
 
 (defun impeach (deaths)
-  (format *query-io* "~%You starved ~D people in one year!!!~%" deaths)
+  (format *query-io* "~%You starved ~D ~:*~/hamurabi::peeps/ in one year!!!~%" deaths)
   (fink))
 
 (defun plague-check! (year-data game-data)
@@ -127,17 +132,17 @@
     (with-slots
       (store acreage) game-data
       (labels ((do-buy-sell ()
-                            (format *query-io* "Land is trading at ~D bushels per acre.~%" price)
+                            (format *query-io* "Land is trading at ~D bushel~:P per acre.~%" price)
                             (let* ((buy-num (input-num "How many acres do you wish to buy?"))
                                    (sell-num (if (eq 0 buy-num) (input-num "How many acres do you wish to sell?") 0))
                                    (buy-rate (* buy-num price))
                                    (sell-rate (* sell-num price)))
                               (cond
                                 ((> buy-rate store)
-                                 (format *query-io* "Hamurabi, think again. You only have ~D bushels of grain and that many acres will cost you ~:D.~%" store buy-rate)
+                                 (format *query-io* "Hamurabi, think again. You only have ~D bushel~:P of grain and that many acres will cost you ~:D.~%" store buy-rate)
                                  (do-buy-sell))
                                 ((> sell-num acreage)
-                                 (format *query-io* "Hamurabi, think again. You only own ~D acres.~%" acreage)
+                                 (format *query-io* "Hamurabi, think again. You only own ~D acre~:P.~%" acreage)
                                  (do-buy-sell))
                                 (t
                                   (setf acreage (- (+ acreage buy-num) sell-num))
@@ -153,7 +158,7 @@
                       (let ((food-num (input-num "How many bushels do you wish to feed your people?")))
                         (cond
                           ((> food-num store)
-                           (format *query-io* "Hamurabi, think again. You only have ~D bushels available.~%" store)
+                           (format *query-io* "Hamurabi, think again. You only have ~D bushel~:P available.~%" store)
                            (do-feed))
                           (t
                             (setf store (- store food-num))
@@ -174,10 +179,10 @@
                               (format *query-io* "Hamurabi, think again. You only have ~D acres available for planting.~%" acreage)
                               (do-harvest))
                              ((> bushel-cost store)
-                              (format *query-io* "Hamurabi, think again. Planting that many acres requires ~D bushels and you only have ~D.~%" bushel-cost store)
+                              (format *query-io* "Hamurabi, think again. Planting that many acres requires ~D bushel~:P and you only have ~D.~%" bushel-cost store)
                               (do-harvest))
                              ((> pop-cost population)
-                              (format *query-io* "Hamurabi, think again. It takes ~D people to harvest that many acres, but you only have ~D.~%" pop-cost population)
+                              (format *query-io* "Hamurabi, think again. It takes ~D ~:*~/hamurabi::peeps/ to harvest that many acres, but you only have ~D.~%" pop-cost population)
                               (do-harvest))
                              (t
                                (let ((work-store (- store bushel-cost)))

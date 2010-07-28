@@ -3,4 +3,5 @@
 (defpackage :net.sinawali.hamurabi
   (:use :cl)
   (:nicknames :hamurabi)
-  (:export :hamurabi))
+  (:export :hamurabi
+           :hamurabi-cust))
