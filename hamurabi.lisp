@@ -54,10 +54,10 @@
 (defun intro (game-data)
   (declare (game-data game-data))
   (with-slots
-    (population store acreage) game-data
+    (population store acreage years) game-data
     (format *query-io* 
             "Try your hand at governing ancient Sumeria for a ~R term office.~%~%You are starting with a population of ~D, ~D acres and ~D bushels in store.~%" 
-            *years-to-rule* population acreage store)))
+             years population acreage store)))
 
 (defun year-review (year-data game-data)
   (declare (year-data year-data)
@@ -75,13 +75,12 @@
                 population acreage plant yield rats store))))
   (values))
 
-(defun game-review (game-data)
+(defun game-review (game-data start-land)
   (declare (game-data game-data))
   (when (not (impeached game-data))
     (with-slots
        (population deaths percent-starved acreage years) game-data
-       (let ((land (float (/ acreage population)))
-             (start-land (floor (/ *start-acreage* *start-population*))))
+       (let ((land (float (/ acreage population))))
          (format *query-io* "~%In your ~R year term in office, on average ~,2F percent of the population starved per year.~%A total of ~D people died.~%You started with ~D acres per person and ended with ~,2F acres per person.~%~%" 
                  years percent-starved deaths start-land land)
          (cond
@@ -215,7 +214,7 @@
         (setf births (ceiling (/ (* (1+ (random 5)) (+ (* 20 acreage) store)) population 100)))
         (setf population (+ population births))))))
 
-(defun do-hamurabi (game-data)
+(defun do-hamurabi (game-data start-land)
   (declare (game-data game-data))
   (intro game-data)
   (labels ((do-game (year-data)
@@ -229,7 +228,7 @@
                              (> (years game-data) (year year-data)))
                     (do-game (make-instance 'year-data :year (1+ (year year-data)))))))
   (do-game (make-instance 'year-data :year 1)))
-  (game-review game-data))
+  (game-review game-data start-land))
   
 (defun hamurabi-cust (&key (years 10)
                            (acres 1000)
@@ -242,7 +241,7 @@
                                   :store bushels
                                   :years years))
         (*plague-percent* plague-percent))
-    (do-hamurabi game-data)))
+    (do-hamurabi game-data (floor (/ acres population)))))
 
 (defun hamurabi ()
   (hamurabi-cust))
